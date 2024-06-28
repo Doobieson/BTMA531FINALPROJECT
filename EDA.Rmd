@@ -1,0 +1,96 @@
+---
+title: "BTMA 531 Project"
+output:
+  html_document:
+    df_print: paged
+date: "2024-03-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Linear Regressions
+```{r}
+rm(list = ls())
+set.seed(1)
+library(data.table)
+bnb = fread("Airbnb_Data.csv")
+
+# converting from log price to regular
+bnb$log_price <- exp(bnb$log_price)
+
+# simple linear regression, predict price based on property type
+bnb$property_type=as.factor(bnb$property_type)
+fit1 = lm(log_price ~ property_type, data=bnb)
+summary(fit1)
+boxplot(log_price ~ property_type, data=bnb,las = 2, cex.axis=0.5, main="price vs property type", ylab="price")
+abline(lm(bnb$log_price ~ as.numeric(bnb$property_type)))
+
+summary(fit1)$sigma  # RMSE
+summary(fit1)$r.squared  # R-squared
+mean(abs(fit1$residuals)) # MAE
+plot(predict(fit1), residuals(fit1)) #plotting the predicted values and residuals
+
+
+# multiple linear reg with variables deemed relevant
+
+#subset, just in case
+#bnbSubset <- bnb[sample(nrow(bnb), 50000),]
+
+fit2=lm(log_price~
+          as.factor(property_type)+
+          as.factor(room_type)+
+          accommodates+
+          bathrooms+
+          as.factor(bed_type)+
+          as.factor(cancellation_policy)+
+          as.factor(cleaning_fee)+
+          as.factor(city)+
+          latitude+
+          longitude+
+          number_of_reviews+
+          bedrooms+
+          beds+
+          review_scores_rating
+        , data=bnb)
+
+summary(fit2)
+
+summary(fit2)$sigma  # RMSE
+summary(fit2)$r.squared  # R-squared
+mean(abs(fit2$residuals)) # MAE
+plot(predict(fit2), residuals(fit2)) #plotting the predicted values and residuals
+
+# look at multicolinearty
+install.packages("car")
+library(car)
+vif_values <- car::vif(fit2)
+print(vif_values)
+
+#some more boxplots
+boxplot(log_price ~ accommodates, data=bnb, main="price vs people accomodated", ylab="price")
+abline(lm(bnb$log_price ~ bnb$accommodates))
+
+boxplot(log_price ~ bedrooms, data=bnb, main="price vs bedrooms", ylab="price")
+abline(lm(bnb$log_price ~ bnb$bedrooms))
+
+boxplot(log_price ~ bathrooms, data=bnb, main="price vs bathrooms", ylab="price")
+abline(lm(bnb$log_price ~ bnb$bathrooms))
+
+boxplot(log_price ~ city, data=bnb, main="price vs city", cex.axis=0.6, ylab="price")
+abline(lm(bnb$log_price ~ bnb$city))
+
+boxplot(log_price ~ room_type, data=bnb, main="price vs room type", ylab="price")
+abline(lm(bnb$log_price ~ bnb$room_type))
+```
+
+```{r}
+# QQ plot to test distribution
+qqnorm(log(bnb$log_price))
+qqline(log(bnb$log_price))
+
+qqnorm(bnb$log_price)
+qqline(bnb$log_price)
+```
+
